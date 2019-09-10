@@ -1,0 +1,128 @@
+Tokens:
+ 0 => WHITESPACE
+ 1 => ALIASED
+ 2 => CONSTANT
+ 3 => SEMICOLON
+ 4 => IDENTIFIER
+ 5 => Wisi_EOI
+ 6 => wisitoken_accept
+ 7 => object_declaration_list
+ 8 => object_declaration
+ 9 => aliased_opt
+ 10 => constant_opt
+
+Productions:
+6.0: wisitoken_accept <= object_declaration_list Wisi_EOI
+7.0: object_declaration_list <= object_declaration_list object_declaration ; (1) LEFT
+7.1: object_declaration_list <= object_declaration
+8.0: object_declaration <= IDENTIFIER aliased_opt constant_opt SEMICOLON
+9.0: aliased_opt <= ALIASED
+9.1: aliased_opt <=
+10.0: constant_opt <= CONSTANT
+10.1: constant_opt <=
+
+Recursions:
+1 => (7 (0 LEFT) -> )
+
+LALR Parse Table:
+State 0:
+      6.0:wisitoken_accept <= ^ object_declaration_list Wisi_EOI, 
+
+   IDENTIFIER              => shift and goto state 1
+   default                 => ERROR
+
+   object_declaration_list goto state 2
+   object_declaration      goto state 3
+
+   Minimal_Complete_Action => IDENTIFIER
+
+State 1:
+      8.0:object_declaration <= IDENTIFIER ^ aliased_opt constant_opt SEMICOLON, IDENTIFIER/Wisi_EOI
+
+   ALIASED                 => shift and goto state 4
+   CONSTANT                => reduce 0 tokens to aliased_opt 9.1
+   SEMICOLON               => reduce 0 tokens to aliased_opt 9.1
+   default                 => ERROR
+
+   aliased_opt             goto state 5
+
+   Minimal_Complete_Action => aliased_opt
+
+State 2:
+      6.0:wisitoken_accept <= object_declaration_list ^ Wisi_EOI, 
+      7.0:object_declaration_list <= object_declaration_list ^ object_declaration, IDENTIFIER/Wisi_EOI
+
+   IDENTIFIER              => shift and goto state 1
+   Wisi_EOI                => accept it 6.0
+   default                 => ERROR
+
+   object_declaration      goto state 6
+
+   Minimal_Complete_Action => 
+
+State 3:
+      7.1:object_declaration_list <= object_declaration ^, IDENTIFIER/Wisi_EOI
+
+   IDENTIFIER              => reduce 1 tokens to object_declaration_list 7.1
+   Wisi_EOI                => reduce 1 tokens to object_declaration_list 7.1
+   default                 => ERROR
+
+   Minimal_Complete_Action => object_declaration_list
+
+State 4:
+      9.0:aliased_opt <= ALIASED ^, CONSTANT/SEMICOLON
+
+   CONSTANT                => reduce 1 tokens to aliased_opt 9.0
+   SEMICOLON               => reduce 1 tokens to aliased_opt 9.0
+   default                 => ERROR
+
+   Minimal_Complete_Action => aliased_opt
+
+State 5:
+      8.0:object_declaration <= IDENTIFIER aliased_opt ^ constant_opt SEMICOLON, IDENTIFIER/Wisi_EOI
+
+   CONSTANT                => shift and goto state 7
+   SEMICOLON               => reduce 0 tokens to constant_opt 10.1
+   default                 => ERROR
+
+   constant_opt            goto state 8
+
+   Minimal_Complete_Action => constant_opt
+
+State 6:
+      7.0:object_declaration_list <= object_declaration_list object_declaration ^, IDENTIFIER/Wisi_EOI
+
+   IDENTIFIER              => reduce 2 tokens to object_declaration_list 7.0
+   Wisi_EOI                => reduce 2 tokens to object_declaration_list 7.0
+   default                 => ERROR
+
+   Minimal_Complete_Action => object_declaration_list recursive
+
+State 7:
+     10.0:constant_opt <= CONSTANT ^, SEMICOLON
+
+   SEMICOLON               => reduce 1 tokens to constant_opt 10.0
+   default                 => ERROR
+
+   Minimal_Complete_Action => constant_opt
+
+State 8:
+      8.0:object_declaration <= IDENTIFIER aliased_opt constant_opt ^ SEMICOLON, IDENTIFIER/Wisi_EOI
+
+   SEMICOLON               => shift and goto state 9
+   default                 => ERROR
+
+   Minimal_Complete_Action => SEMICOLON
+
+State 9:
+      8.0:object_declaration <= IDENTIFIER aliased_opt constant_opt SEMICOLON ^, IDENTIFIER/Wisi_EOI
+
+   IDENTIFIER              => reduce 4 tokens to object_declaration 8.0
+   Wisi_EOI                => reduce 4 tokens to object_declaration 8.0
+   default                 => ERROR
+
+   Minimal_Complete_Action => object_declaration
+
+ 0 accept/reduce conflicts, 0 shift/reduce conflicts, 0 reduce/reduce conflicts
+
+ 4 rules, 0 user actions, 0 checks, 10 states

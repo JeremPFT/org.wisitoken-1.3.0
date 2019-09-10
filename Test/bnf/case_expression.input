@@ -1,0 +1,3 @@
+-- Just parse successfully
+when A => 123.4
+

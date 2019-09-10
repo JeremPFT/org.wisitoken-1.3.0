@@ -1,0 +1,75 @@
+;; small Ada-like grammar illustrating the reduce/reduce conflict
+;; between an identifier_list and a name.
+;;
+;; The grammar is ambiguous between an identifier_list and a
+;; name_list, if none of the names are string literals. This shows up
+;; in the the compiled grammar as several reduce/reduce conflicts, and
+;; in the parser as two parsers reaching an identical state.
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%keyword LEFT_PAREN "("
+%keyword RIGHT_PAREN ")"
+
+%token <punctuation> COMMA ","
+%token <punctuation> EQUAL_GREATER "=>"
+
+%token <string-double> STRING_LITERAL %[ '"'[^"]*'"' ]%
+;; " terminate quote
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+%non_grammar <non-reporting> COMMENT %[ "--"[^\n]*[\n] ]%
+
+;; not first nonterminal
+%start compilation
+
+%conflict REDUCE/REDUCE in state identifier_list, name on token COMMA
+%conflict REDUCE/REDUCE in state identifier_list, name on token LEFT_PAREN
+%conflict REDUCE/REDUCE in state identifier_list, name on token IDENTIFIER
+%conflict REDUCE/REDUCE in state identifier_list, name on token STRING_LITERAL
+%conflict REDUCE/REDUCE in state identifier_list, name on token Wisi_EOI
+
+association
+  : selector_name EQUAL_GREATER name
+  ;
+
+association_list
+  : association_list COMMA association
+  | association
+  ;
+
+compilation
+  : compilation_unit compilation_unit compilation_unit
+    %(null; -- setq wisi-test-success t)%
+  ;
+
+compilation_unit
+  : identifier_list
+  | name_list
+  | LEFT_PAREN association_list RIGHT_PAREN
+  ;
+
+identifier_list
+  : identifier_list COMMA IDENTIFIER
+  | IDENTIFIER
+  ;
+
+name
+  : IDENTIFIER
+  | STRING_LITERAL  ;; operator_symbol
+  ;
+
+name_list
+  : name_list COMMA name
+  | name
+  ;
+
+selector_name
+  : IDENTIFIER
+  | STRING_LITERAL  ;; operator_symbol
+  ;
+
+;;; end of file

@@ -1,0 +1,37 @@
+;;; finding bug in parse table generator; nonterm followed by possibly empty nonterm
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%token <punctuation> SEMICOLON ";"
+
+%keyword ACCEPT "accept"
+%keyword LEFT_PAREN "("
+%keyword RIGHT_PAREN ")"
+
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+
+%start compilation_unit
+
+compilation_unit
+  : accept_statement accept_statement
+  ;
+
+accept_statement
+  : ACCEPT name parameter_profile SEMICOLON
+  ;
+
+name : IDENTIFIER
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  ;
+
+parameter_profile
+  : LEFT_PAREN IDENTIFIER RIGHT_PAREN
+  | ;; empty
+  ;
+
+;; end of file

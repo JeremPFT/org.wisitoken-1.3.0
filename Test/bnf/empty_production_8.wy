@@ -1,0 +1,44 @@
+;;; Finding bug in parse table generator; 2 consecutive nonterms can
+;;; be empty, and confused with a similar production
+;;;
+;;; also testing pending actions; object_declaration action is not
+;;; output until after conflict is resolved.
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%keyword ALIASED "aliased"
+%keyword CONSTANT "constant"
+
+%token <punctuation> COLON_EQUAL ":="
+%token <punctuation> SEMICOLON ";"
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+
+%start object_declaration_list
+
+%conflict SHIFT/REDUCE in state object_declaration, object_declaration  on token CONSTANT
+
+object_declaration_list
+  : object_declaration_list object_declaration
+  | object_declaration
+  ;
+
+object_declaration
+  : IDENTIFIER aliased_opt constant_opt SEMICOLON
+  | IDENTIFIER constant_opt COLON_EQUAL SEMICOLON
+  ;
+
+aliased_opt
+  : ALIASED
+  | ;; empty
+  ;
+
+constant_opt
+  : CONSTANT
+  | ;; empty
+  ;
+
+;;; end of file

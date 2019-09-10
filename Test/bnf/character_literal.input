@@ -1,0 +1,34 @@
+-- case insensitive keyword
+Foo;
+foo;
+
+-- These all yield the same token sequence
+
+Character'('a');
+Character'( 'b' );
+Character '('c');
+Character ' ( 'd' );
+Character ' ( 'π' );
+
+--  This is a character array
+Char_Array'('e', 'f');
+
+-- a character literal '
+Character'(''');
+
+-- attribute reference
+objectπ'attribute;
+
+-- two lines, to test First
+object
+  'attribute;
+
+"a string with Greek letters αΣΘΠπ";
+
+-- This is one string with two embedded quotes, not three strings with no whitespace
+" an ""other"" string";
+
+-- A GNAT non-ascii identifier and character literal theta
+["03c0"]_Wide_Character'('["03B8"]');
+
+-- comment before EOF.

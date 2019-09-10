@@ -1,0 +1,136 @@
+Tokens:
+ 0 => WHITESPACE
+ 1 => COMMENT
+ 2 => BEGIN
+ 3 => IS
+ 4 => SEMICOLON
+ 5 => Wisi_EOI
+ 6 => wisitoken_accept
+ 7 => declaration
+ 8 => declarations
+ 9 => body
+
+Productions:
+6.0: wisitoken_accept <= declarations Wisi_EOI
+7.0: declaration <= body ; (1) MIDDLE
+7.1: declaration <=
+8.0: declarations <= declarations declaration ; (1, 2) LEFT
+8.1: declarations <= declaration ; (1) MIDDLE
+9.0: body <= IS declarations BEGIN SEMICOLON ; (1) MIDDLE
+
+Recursions:
+1 => (7 (0 SINGLE) -> 9 (0 MIDDLE) -> 8 (0 RIGHT, 1 SINGLE) -> )
+2 => (8 (0 LEFT) -> )
+
+LALR Parse Table:
+State 0:
+      6.0:wisitoken_accept <= ^ declarations Wisi_EOI, 
+
+   IS               => shift and goto state 1,
+                       reduce 0 tokens to declaration 7.1
+   Wisi_EOI         => reduce 0 tokens to declaration 7.1
+   default          => ERROR
+
+   declaration      goto state 2
+   declarations     goto state 3
+   body             goto state 4
+
+   Minimal_Complete_Action => declarations
+
+State 1:
+      9.0:body <= IS ^ declarations BEGIN SEMICOLON, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => reduce 0 tokens to declaration 7.1
+   IS               => shift and goto state 1,
+                       reduce 0 tokens to declaration 7.1
+   default          => ERROR
+
+   declaration      goto state 2
+   declarations     goto state 5
+   body             goto state 4
+
+   Minimal_Complete_Action => declarations
+
+State 2:
+      8.1:declarations <= declaration ^, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => reduce 1 tokens to declarations 8.1
+   IS               => reduce 1 tokens to declarations 8.1
+   Wisi_EOI         => reduce 1 tokens to declarations 8.1
+   default          => ERROR
+
+   Minimal_Complete_Action => declarations
+
+State 3:
+      6.0:wisitoken_accept <= declarations ^ Wisi_EOI, 
+      8.0:declarations <= declarations ^ declaration, IS/Wisi_EOI
+
+   IS               => shift and goto state 1,
+                       reduce 0 tokens to declaration 7.1
+   Wisi_EOI         => accept it 6.0,
+                       reduce 0 tokens to declaration 7.1
+   default          => ERROR
+
+   declaration      goto state 6
+   body             goto state 4
+
+   Minimal_Complete_Action => 
+
+State 4:
+      7.0:declaration <= body ^, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => reduce 1 tokens to declaration 7.0
+   IS               => reduce 1 tokens to declaration 7.0
+   Wisi_EOI         => reduce 1 tokens to declaration 7.0
+   default          => ERROR
+
+   Minimal_Complete_Action => declaration
+
+State 5:
+      8.0:declarations <= declarations ^ declaration, BEGIN/IS
+      9.0:body <= IS declarations ^ BEGIN SEMICOLON, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => shift and goto state 7,
+                       reduce 0 tokens to declaration 7.1
+   IS               => shift and goto state 1,
+                       reduce 0 tokens to declaration 7.1
+   default          => ERROR
+
+   declaration      goto state 6
+   body             goto state 4
+
+   Minimal_Complete_Action => BEGIN
+
+State 6:
+      8.0:declarations <= declarations declaration ^, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => reduce 2 tokens to declarations 8.0
+   IS               => reduce 2 tokens to declarations 8.0
+   Wisi_EOI         => reduce 2 tokens to declarations 8.0
+   default          => ERROR
+
+   Minimal_Complete_Action => declarations recursive
+
+State 7:
+      9.0:body <= IS declarations BEGIN ^ SEMICOLON, BEGIN/IS/Wisi_EOI
+
+   SEMICOLON        => shift and goto state 8
+   default          => ERROR
+
+   Minimal_Complete_Action => SEMICOLON
+
+State 8:
+      9.0:body <= IS declarations BEGIN SEMICOLON ^, BEGIN/IS/Wisi_EOI
+
+   BEGIN            => reduce 4 tokens to body 9.0
+   IS               => reduce 4 tokens to body 9.0
+   Wisi_EOI         => reduce 4 tokens to body 9.0
+   default          => ERROR
+
+   Minimal_Complete_Action => body
+
+States with conflicts: 0 1 3 5
+
+ 1 accept/reduce conflicts, 5 shift/reduce conflicts, 0 reduce/reduce conflicts
+
+ 3 rules, 1 user actions, 0 checks, 9 states

@@ -1,0 +1,143 @@
+;; Examples of EBNF syntax used in the Java grammar file
+;; https://github.com/antlr/grammars-v4/tree/master/java
+;;
+;; Note that the only *.*_good file is java_ebnf_bnf.wy_good, and that
+;; this file does not declare all used tokens; we are only testing the
+;; translation from EBNF to BNF.
+
+%meta_syntax EBNF
+
+%start compilationUnit
+%generate None
+%partial_recursion
+
+%token <punctuation> ADD_ASSIGN         '+='
+%token <punctuation> AND_ASSIGN         '&='
+%token <punctuation> ASSIGN             '='
+%token <punctuation> COMMA              ','
+%token <punctuation> DEC                '--'
+%token <punctuation> DIV_ASSIGN         '/='
+%token <punctuation> DOT                '.'
+%token <punctuation> INC                '++'
+%token <punctuation> LBRACE             '{'
+%token <punctuation> LBRACK             '['
+%token <punctuation> LSHIFT_ASSIGN      '<<='
+%token <punctuation> MOD_ASSIGN         '%='
+%token <punctuation> MUL_ASSIGN         '*='
+%token <punctuation> OR_ASSIGN          '|='
+%token <punctuation> RBRACE             '}'
+%token <punctuation> RBRACK             ']'
+%token <punctuation> RSHIFT_ASSIGN      '>>='
+%token <punctuation> SEMI               ';'
+%token <punctuation> SUB_ASSIGN         '-='
+%token <punctuation> URSHIFT_ASSIGN     '>>>='
+%token <punctuation> XOR_ASSIGN         '^='
+
+;; IDENTIFIER QUESTION | IDENTIFIER STAR
+compilationUnit
+    : packageDeclaration? importDeclaration* typeDeclaration* EOF
+    ;
+
+statement
+  : blockLabel=block
+  | TRY block (catchClause+ finallyBlock? | finallyBlock)
+    %((wisi-statement-action [1 statement-start]))%
+  | SWITCH parExpression '{' switchBlockStatementGroup* switchLabel* '}'
+  ;
+
+;; rhs_group_item QUESTION | STRING_LITERAL_2 QUESTION
+enumDeclaration
+    : ENUM IDENTIFIER (IMPLEMENTS typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
+    ;
+
+;; Duplicate '(IMPLEMENTS typeList)?'
+classDeclaration
+    : CLASS IDENTIFIER typeParameters?
+      (EXTENDS typeType)?
+      (IMPLEMENTS typeList)?
+      classBody
+    ;
+
+;; labeled rhs_optional_item
+forControl
+    : enhancedForControl
+    | forInit? ';' expression? ';' forUpdate=expressionList?
+    ;
+
+;; no labels in canonical list
+argumentList
+  : argument (',' argument)*
+  ;
+
+;; labels in canonical list
+expressionList
+  : T1=expression (T2=',' T3=expression)*
+    %((wisi-indent-action [(T1 . (wisi-indent-hanging 0 java-indent-broken))
+                           (T2 . 0)
+                           (T3 . [(wisi-indent-hanging 0 java-indent-broken)
+                                  (wisi-indent-hanging 0 java-indent-broken))]))%
+  ;
+
+;; Start test of previous bug in searching for single-element list
+;; nonterm.
+PrimitiveType:
+    {Annotation} NumericType
+  | {Annotation} boolean
+  ;
+
+;; This is not an AnnotationList.
+TypeParameterModifier: Annotation;
+
+;; This is an AnnotationList
+AnnotationList
+  : Annotation
+  | AnnotationList Annotation
+  ;
+;; End test of previous bug in searching for list nonterm.
+
+;; Single-item optional brackets with label.
+ReturnStatement
+  : T1='return' [T2=Expression] T3=';'
+  %((wisi-indent-action [(T1 . 0) (T2 . java-indent-broken) (T3 . 0)]))%
+  ;
+
+;; labeled STRING_LITERAL_2, non-trivial rhs_alternative_list, labeled rhs_group_item, rhs_attribute
+expression
+    : primary
+    | expression bop='.'
+      ( THIS
+      | NEW nonWildcardTypeArguments? innerCreator
+      | SUPER superSuffix
+      | explicitGenericInvocation
+      )
+    | expression postfix=('++' | '--')
+
+    ;; attribute with more than one item following
+    | <assoc=right> expression
+      bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
+      expression
+
+    ;; attribute with one item following
+    | <assoc=right> expression
+    ;
+
+;; non-trivial group item
+arrayCreatorRest
+    : '[' (']' ('[' ']')* arrayInitializer | expression ']' ('[' expression ']')* ('[' ']')*)
+    ;
+
+;; another non-trivial group item, and lots of copies
+interfaceMethodDeclaration
+    : interfaceMethodModifier* (typeTypeOrVoid | typeParameters annotation* typeTypeOrVoid)
+      IDENTIFIER formalParameters ('[' ']')* (THROWS qualifiedNameList)? methodBody
+    ;
+
+;; trailing optional with multiple tokens
+typeParameter
+    : annotation* IDENTIFIER (EXTENDS typeBound)?
+    ;
+
+;; Recognize this as a canonical list
+SwitchLabels: SwitchLabel {SwitchLabel} ;
+
+;; end of file

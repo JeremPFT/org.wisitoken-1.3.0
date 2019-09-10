@@ -1,0 +1,77 @@
+do sal release ../../org.stephe_leake.sal/notes.text
+
+Makefile
+    update-wisitoken_grammar
+
+(dvc-state-one ".")
+
+review Debian bugs
+    (no Debian package yet)
+    http://packages.qa.debian.org/o/wisitoken.html
+
+    tests implemented, fixed?
+
+    doc in ../Docs/wisitoken.html
+
+    Debian package maintainer will mark them closed
+
+review todo list
+    ../notes.text
+
+doc changes since last release
+    ../Docs/wisitoken.html
+        add to history (no NEWS.text)
+    # review mtn log since last release date
+    $ cd org.wisitoken
+    $ mtn log --to d:yyyy-mm-dd > release.log
+    ../release.log
+
+bump version
+    ../Docs/wisitoken.html
+        current version
+        wisitoken-*.tar.bz2
+
+    Makefile
+        ZIP_VERSION
+
+    wisitoken_lib.gpr
+        Version
+
+    ~/Web/Makefile
+        WISITOKEN_ZIP_VERSION
+
+    # *.bz2 on savannah; never deleted
+
+    ../wisitoken-bnf-generate.adb
+        version in Put_Usage
+            independent of ada-mode parser version
+            bump if changes affect ada-mode or other clients
+
+    d:/Web/savannah/ada-mode/index.html ;
+        WisiToken <version>
+
+Makefile
+    (gpr-query-kill-all-sessions)
+    clean
+        # check for missing clean actions
+    all
+
+../notes.text dvc-state-multiple
+
+Makefile
+    zip tag
+
+upload to savannah for Emacs Ada mode:
+    in Cygwin Console (for gpg2 prompts):
+    cd /cygdrive/c/Projects/org.wisitoken/build/
+    rm wisitoken-<old>.tar*
+    gpg -b *.tar.bz2
+    scp *.tar.bz2* stephen_leake@dl.sv.nongnu.org:/releases/ada-mode/
+
+~/Web/Makefile
+    wisitoken sync
+
+announce:
+    comp.lang.ada
+
+(end of file)

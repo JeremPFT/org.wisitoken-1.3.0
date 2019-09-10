@@ -1,0 +1,201 @@
+build/Makefile
+
+branches:
+org.wisitoken/o.s_l.sal                   - main, used by o.e.a
+org.wisitoken.stephe-1/o.s_l.sal.stephe-1 - misc devel for o.w, o.e.a.s-*
+org.wisitoken.stephe-2/o.s_l.sal.stephe-1 - speed up recover
+
+(dvc-state-multiple
+'((xmtn . "/Projects/org.stephe_leake.makerules")
+  (xmtn . "/Projects/org.stephe_leake.aunit_ext")
+  (xmtn . "/Projects/org.stephe_leake.sal")
+  (xmtn . "/Projects/org.wisitoken")))
+
+(dvc-propagate-multiple
+ '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
+   ("../org.wisitoken"        . "../org.wisitoken.stephe-1")))
+
+update-wisitoken_grammar
+(dvc-propagate-multiple
+ '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
+   ("../org.wisitoken.stephe-1"        . "../org.wisitoken")))
+
+ current work
+improve mismatched paren checks in actions
+    maybe just in wisitoken_grammar_mode?
+        only active if mmm-mode recognizes action; improve that?
+    partial parse in ada.wy?
+
+alternate table rep for duplicate reduce actions?
+
+use duplicate_reduce in text_rep
+
+allow undo_reduce after insert/fast_forward
+    in Recover, processing ops
+        need test case; ada_mode.recover_25 with language_fix that does not push_back declarative_part_opt
+        ada_mode-recover_27.adb uses Undo_Reduce (to allow 'insert loop'), but not after insert.
+        if no useful test cases, delete Try_Undo_Reduce, and doc why.
+        or add None_At_All (Insert) to try_Undo_Reduce.
+
+check should check all conflicts, enqueue conflicts on success
+    otherwise we are ignoring possible solutions.
+
+test_mckenzie use lr-parser-gen_aunit
+
+use First to compute String_ID_Set?
+
+make "canonical list" compatible with packrat?
+    ie swap rhs_index 0, 1
+    better to implement list in packrat
+
+c:/Projects/org.emacs.java-wisi/test/recover_001.java
+    don't delete next if minimal_c_a inserted
+
+    minimal_complete_actions isn't globally minimal
+        state 245 could use
+            classOrInterfaceType <= IDENTIFIER
+            lambdaParameters <= IDENTIFIER
+            primary <= IDENTIFIER
+            classType <= IDENTIFIER
+
+            picks first = classOrInterfaceType => inserts .class,  reduces to primary
+            find that in a post-optimize step?
+
+Python
+    c:/Projects/org.emacs.python-wisi/python.wy
+    need INDENT, DEDENT in lexer
+    no other new syntax
+    only one state with more than two actions
+    reduce conflicts by recognizing canonical list in local_stmt (correctly)
+    improve process_main compile time
+        reduce number of statements in each subprogram
+        or use text_rep
+
+lalr generator bug
+    long term fix; reimplement lalr using deremer, penello 1982
+    lalr_generator_bug_01.wy => error
+        parser 0 looking for 19.0:association <= identifier => expression
+         0: 10:  7:(IDENTIFIER, (38 . 38)) : shift and goto state 18
+         0: 18:  8:(RIGHT_PAREN, (39 . 39)) : reduce 1 tokens to name ...   (state 10) goto state 22
+         0: 22:  8:(RIGHT_PAREN, (39 . 39)) : reduce 1 tokens to primary... (state 10) goto state -1
+
+        state 10 missing goto for primary, because that's an error;
+        the only choice would be goto state 36, but there's no
+        unary_adding_operator_opt on the stack.
+
+        state 22 should not have both 23.0 and 25.0
+            but lalr_goto_transitions clearly does that
+                could include sequence of empty nonterms in first_nonterm_set, return two goto_sets
+            compare to bison lalr_generator_bug_01.bison_table
+            parse .input using bison table
+            bison state 36 is the same
+
+re2c now has --location-format <gnu | msvc>
+    Apr 2019 in devel, not release
+
+c:/eurocontrol/query_display-flight_operations.adb
+    errors cause huge slowdown in parse speed
+        due to parallel parse, delete_dup?
+
+    do multi-cpu parsing?
+        benefit depends on density, duration of conflicts
+        errors are when speed is noticeable
+
+enqueue_limit should be for total over all parsers; more consistent max time
+    need test case?
+
+Error messages need gen_alg prefix - add to Error_message
+
+capture diff between lr1, lalr recover
+    ./ada_lite_lalr_run.exe -m 1 -t 1
+    ada_lite_recover_repeatable.input:45:
+        package body P is procedure Remove is begin A := B; exception end; A := B; end Remove; end P; procedure Q;
+        lr1: reports syntax error, all 4 parsers find solutions quickly
+        lalr: reports match_names_error, two parsers fail on cost
+
+        similar on line 47; lalr finds no solutions
+
+can generate code for LR parser, rather than using table
+    see Google drive/Parsing/notes
+    screws up recover because parse stack = cpu stack; not accessible?
+
+try packrat indirect recursion solution
+    see paper by laurent, mens
+        in ebooks/parsing, google drive
+        used in https://tatsu.readthedocs.io/
+
+    docs/indirect_recursion_in_packrat.latex
+        finish it
+
+    add "run grammar.wy input" main for -procedural_*?
+
+    adding head, grow_set to Parser
+        must be on a stack for nested recursion?
+
+    test with optional unary minus
+
+    warth_left_recurse_expr_1.adb : Test_Parse_Proc
+
+    trying to implement full warth, but it's missing stuff, and some makes no sense
+        try https://github.com/alexwarth/ometa-js
+        or figure out what it must do; ie understand the algorithm
+
+    try S Medeiros, F Mascarenhas, R Ierusalimschy 2014 Left recursion in parsing expression grammars.pdf
+        very similar, mentions "memoization scope", doesn't say how to detect recursion
+
+    or adapt langkit with pre-computed indirect
+
+
+Implement Redziejowski language hiding check
+
+add packrat to ada-mode s-4
+    time, compare to langkit
+
+compare to bison times
+
+implement IELR?
+    merges states like LALR, but only if that doesn't introduce new conflicts
+        => faster than LR1
+        for Ada, would only add 1 state
+
+    IELR and LALR merge states with different lookaheads; it is the lookaheads that determine error correction
+        define some other state merging criteria for error correction?
+
+packrat space use
+    can free low level derivs; they will never be evaled
+        derive condition
+        use free list in syntax tree
+
+add packrat error recover
+
+adacore langkit_support.packrat implements one row of the derivs table
+        it only stores 16 most recently computed items; enough to compute a typical subroutine?
+            slows down error recovery if have to go back more than 16 (not likely)
+            clearly adequate given fast performance
+            compare performance to a sparse vector
+        libadalang.analysis.parsers Parser_Private_Part_Type stores all the rows
+
+use wisi-gen_output_ada_common.adb Append in wisi-output_ada, _emacs.
+
+do google search for "ada parser generator"
+    add wisitoken to those sites
+
+rename mckenzie to dpa_explore?
+    dpa = deterministic parsing automata (McKenzie)
+        = Deterministic Pushdown Automata (Wikipedia, Grune)
+
+    aflex uses "dfa" deterministic finite automata
+    grune also uses 'deterministic fs automata' (Finite State)
+
+    includes special rules
+
+
+automatically augment grammar with empty productions
+    anything not a keyword is optional
+    may create too many conflicts
+
+integrate with emacs module
+
+ build/release_process.text
+
+# end of file

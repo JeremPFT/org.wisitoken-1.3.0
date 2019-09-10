@@ -1,0 +1,36 @@
+;;; finding bug in parse table generator; 2 consecutive nonterms can be empty
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%keyword ALIASED "aliased"
+%keyword CONSTANT "constant"
+
+%token <punctuation> SEMICOLON ";"
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+
+%start object_declaration_list
+
+object_declaration_list
+  : object_declaration_list object_declaration
+  | object_declaration
+  ;
+
+object_declaration
+  : IDENTIFIER aliased_opt constant_opt SEMICOLON
+  ;
+
+aliased_opt
+  : ALIASED
+  | ;; empty
+  ;
+
+constant_opt
+  : CONSTANT
+  | ;; empty
+  ;
+
+;;; end of file

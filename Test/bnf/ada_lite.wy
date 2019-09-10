@@ -1,0 +1,619 @@
+;;; Wisi grammar for Ada-Lite; a subset of Ada used for testing syntax
+;;; error recovery.
+;;
+;; This file was produced by copying the full Ada grammar from Emacs
+;; Ada mode (https://savannah.nongnu.org/projects/ada-mode/), and
+;; deleting stuff.
+
+%code copyright_license %{
+;;  Copyright (C) 2017 - 2019 Free Software Foundation, Inc.
+;;
+;;  Author: Stephen Leake <stephe-leake@stephe-leake.org>
+;;
+;;  This file is part of WisiToken.
+;;
+;;  WisiToken is free software: you can redistribute it and/or modify
+;;  it under the terms of the GNU General Public License as published by
+;;  the Free Software Foundation, either version 3 of the License, or
+;;  (at your option) any later version.
+;;
+;;  WisiToken is distributed in the hope that it will be useful,
+;;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;  GNU General Public License for more details.
+;;
+;;  You should have received a copy of the GNU General Public License
+;;  along with WisiToken.  If not, see <http://www.gnu.org/licenses/>.
+}%
+
+%code actions spec context %{with WisiToken.Text_IO_Trace;}%
+
+%code actions spec post %{
+   Trace : aliased WisiToken.Text_IO_Trace.Trace (Descriptor'Access);
+
+   End_Name_Optional : Boolean := True;
+
+   Partial_Parse_Active    : Boolean := False;
+   Partial_Parse_Byte_Goal : WisiToken.Buffer_Pos := WisiToken.Buffer_Pos'Last;
+
+   Action_Count : array (Descriptor.First_Nonterminal .. Descriptor.Last_Nonterminal) of Integer := (others => 0);
+}%
+
+;; Declare all variants tested by wisi_wy_test.adb
+%generate LALR Ada re2c
+%generate LR1 Ada re2c text_rep
+;; FIXME: support indirect left recursion, add Packrat_Gen, Packrat_Proc
+
+%keyword AND "and"
+%keyword BEGIN "begin"
+%keyword BODY "body"
+%keyword CASE "case"
+%keyword DECLARE "declare"
+%keyword ELSE "else"
+%keyword ELSIF "elsif"
+%keyword END "end"
+%keyword EXIT "exit"
+%keyword EXCEPTION "exception"
+%keyword FOR "for"
+%keyword FUNCTION "function"
+%keyword IF "if"
+%keyword IN "in"
+%keyword IS "is"
+%keyword LEFT_PAREN "("
+%keyword LOOP "loop"
+%keyword NEW "new"
+%keyword NOT "not"
+%keyword OR "or"
+%keyword PACKAGE "package"
+%keyword PROCEDURE "procedure"
+%keyword RANGE "range"
+%keyword RETURN "return"
+%keyword RIGHT_PAREN ")"
+%keyword SEPARATE "separate"
+%keyword THEN "then"
+%keyword TYPE "type"
+%keyword WHEN "when"
+%keyword WITH "with"
+%keyword XOR "xor"
+
+;; all tokens that consist of characters with punctuation syntax
+%token <punctuation> AMPERSAND "&"
+%token <punctuation> COLON ":"
+%token <punctuation> COLON_EQUAL ":="
+%token <punctuation> COMMA ","
+%token <punctuation> DOT "."
+%token <punctuation> DOT_DOT ".."
+%token <punctuation> EQUAL "="
+%token <punctuation> EQUAL_GREATER "=>"
+%token <punctuation> GREATER ">"
+%token <punctuation> GREATER_EQUAL ">="
+%token <punctuation> LESS "<"
+%token <punctuation> LESS_EQUAL "<="
+%token <punctuation> MINUS "-"
+%token <punctuation> PLUS "+"
+%token <punctuation> SEMICOLON ";"
+%token <punctuation> SLASH "/"
+%token <punctuation> SLASH_EQUAL "/="
+%token <punctuation> STAR "*"
+
+%token <string-double> STRING_LITERAL %[ (["][\x20-\x21\x23-\U0010FFFF]*["])+ ]%
+%token <number> NUMERIC_LITERAL %[ [0-9]+ ]%
+%token <symbol> IDENTIFIER %[ [a-zA-Z\x80-\U0010FFFF][0-9a-zA-Z_\x80-\U0010FFFF]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t] ]%
+%non_grammar <new-line> NEW_LINE %[ [\n] ]%
+%non_grammar <comment> COMMENT %[ "--"[^\n\x04]*[\n\x04] ]%
+
+%start compilation_unit_list
+
+;; Set costs to take advantage of syntax to get to solution faster.
+
+%mckenzie_enqueue_limit 1000
+%mckenzie_check_limit 3
+
+;; Default cost for insert terminal, delete terminal, push back, ignore check fail.
+;;
+;; 'ignore check fail' cost is not zero here, so we can more easily
+;; test other strategies. Real languages may want 'ignore check fail'
+;; cost to be zero, to allow parse to succeed while changing a
+;; subprogram name
+%mckenzie_cost_default 4 4 4 2
+
+;; Almost cancel out cost of inserting if using
+;; Minimal_Complete_Actions; allow other solutions to be cheaper than
+;; completing the entire compilation_unit before the error point.
+;; -2 is too expensive; hits enqueue_limit before finding solutions.
+%mckenzie_minimal_complete_cost_delta -3
+
+;; We don't reduce the cost of inserting any tokens; Minimal_Complete
+;; reduces some appropriately.
+
+;; We often have an extra 'begin' while moving stuff around. Deleting
+;; that requires popping it and the corresponding nonterm off the
+;; parse stack. Similarly, we often have an extra 'end'. But pushing
+;; back or deleting 'end' leads to excessive use of
+;; Insert_Matching_Begin, so it costs a little more.
+%mckenzie_cost_push_back BEGIN 1
+%mckenzie_cost_delete BEGIN 1
+%mckenzie_cost_push_back declarative_part 0
+%mckenzie_cost_push_back END 2
+%mckenzie_cost_delete END 2
+%mckenzie_cost_push_back handled_sequence_of_statements 0
+%mckenzie_cost_push_back sequence_of_statements 0
+%mckenzie_cost_delete SEMICOLON 2
+
+;; Recovering from a missing quote yields a STRING_LITERAL, but the
+;; editing that lead to the missing quote may also lead to a grammar
+;; syntax error where part of the best solution is to delete that
+;; STRING_LITERAL, so make that cheaper than inserting operators and
+;; keywords.
+%mckenzie_cost_delete STRING_LITERAL 2
+
+%conflict REDUCE/REDUCE in state actual_parameter_part, actual_parameter_part  on token RIGHT_PAREN
+%conflict REDUCE/REDUCE in state discrete_subtype_definition, range_list  on token RIGHT_PAREN
+%conflict REDUCE/REDUCE in state primary, subtype_indication  on token RIGHT_PAREN
+%conflict SHIFT/REDUCE in state generic_instantiation, generic_instantiation  on token IS
+%conflict SHIFT/REDUCE in state subprogram_body, subprogram_body  on token IS
+
+;;;; grammar rules
+
+actual_parameter_part
+  : LEFT_PAREN association_list RIGHT_PAREN
+  ;
+
+aspect_specification_opt
+  : WITH association_list
+  | ;; empty
+  ;
+
+assignment_statement
+  : name COLON_EQUAL expression_opt SEMICOLON
+  ;
+
+;; Allowing empty items makes many partially written programs legal;
+;; make sure they don't confuse the error recovery.
+association_opt
+  : IDENTIFIER EQUAL_GREATER expression_opt
+  | expression
+  | ;; empty
+  ;
+
+association_list
+  : association_list COMMA association_opt
+  | association_opt
+  ;
+
+binary_adding_operator
+  : PLUS
+  | MINUS
+  | AMPERSAND
+  ;
+
+block_label_opt
+  : IDENTIFIER COLON
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  | ;; empty
+  ;
+
+block_statement
+  : block_label_opt DECLARE declarative_part BEGIN handled_sequence_of_statements END identifier_opt SEMICOLON
+    %()%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 1, 7, End_Name_Optional);)%
+
+  | block_label_opt BEGIN handled_sequence_of_statements END identifier_opt SEMICOLON
+    %()%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 1, 5, End_Name_Optional);)%
+  ;
+
+body_g :
+    proper_body
+  | body_stub
+  ;
+
+body_stub :
+    subprogram_body_stub
+  ;
+
+case_statement
+  : CASE expression_opt IS case_statement_alternative_list END CASE SEMICOLON
+  ;
+
+case_statement_alternative
+  : WHEN NUMERIC_LITERAL EQUAL_GREATER sequence_of_statements
+  ;
+
+;; We don't allow an empty list here; that leads to parallel parser
+;; explosion in nested case statements.
+case_statement_alternative_list
+  : case_statement_alternative_list case_statement_alternative
+  | case_statement_alternative
+  ;
+
+;; Support partial parse test
+;;
+;; We don't allow an empty compilation unit; that causes too many
+;; ambiguities.
+compilation_unit
+  : package_specification
+  | package_body
+  | subprogram_declaration
+  | subprogram_body
+  | generic_instantiation
+  | statement
+  ;
+
+compilation_unit_list
+  : compilation_unit_list compilation_unit
+  | compilation_unit
+    %( )%
+    %(return Terminate_Partial_Parse (Partial_Parse_Active, Partial_Parse_Byte_Goal, Recover_Active, Nonterm);)%
+  ;
+
+compound_statement
+  : if_statement
+    %(Action_Count (+compound_statement_ID) := Action_Count (+compound_statement_ID) + 1;)%
+  | case_statement
+    %(Action_Count (+compound_statement_ID) := Action_Count (+compound_statement_ID) + 1;)%
+  | loop_statement
+    %(Action_Count (+compound_statement_ID) := Action_Count (+compound_statement_ID) + 1;)%
+  | block_statement
+    %(Action_Count (+compound_statement_ID) := Action_Count (+compound_statement_ID) + 1;)%
+  | extended_return_statement
+    %(Action_Count (+compound_statement_ID) := Action_Count (+compound_statement_ID) + 1;)%
+  ;
+
+constraint
+  : RANGE range_g
+  | index_constraint
+  ;
+
+declaration
+  : body_g
+  | object_declaration
+  | subprogram_declaration
+  | type_declaration
+  ;
+
+declarations
+  : declarations declaration
+  | declaration
+  ;
+
+declarative_part
+  : declarations
+  | ;; empty
+  ;
+
+discrete_subtype_definition : subtype_indication | range_g ;
+
+elsif_statement_item
+  : ELSIF expression_opt THEN sequence_of_statements
+  ;
+
+elsif_statement_list
+  : elsif_statement_list elsif_statement_item
+  | elsif_statement_item
+  ;
+
+enumeration_literal_list
+  : enumeration_literal_list COMMA IDENTIFIER
+  | IDENTIFIER
+  ;
+
+enumeration_type_definition
+  : LEFT_PAREN enumeration_literal_list RIGHT_PAREN
+  ;
+
+exception_choice : name ;
+
+exception_handler
+  : WHEN exception_choice EQUAL_GREATER sequence_of_statements
+  ;
+
+exception_handler_list
+  : exception_handler_list exception_handler
+  | exception_handler
+  ;
+
+exception_handler_list_opt
+  : exception_handler_list
+  | ;; empty for user friendly
+  ;
+
+exit_statement
+  : EXIT identifier_opt WHEN expression_opt SEMICOLON
+  | EXIT identifier_opt SEMICOLON
+  ;
+
+expression
+  : relation
+  | relation_and_list
+  | relation_or_list
+  | relation_xor_list
+  ;
+
+expression_opt
+  : expression
+  | ;; empty for user friendly
+  ;
+
+extended_return_object_declaration
+  : IDENTIFIER COLON subtype_indication
+  ;
+
+extended_return_statement
+  : RETURN extended_return_object_declaration SEMICOLON
+  ;
+
+factor
+  : primary
+  | NOT primary
+  ;
+
+formal_part
+  : LEFT_PAREN parameter_specification_list RIGHT_PAREN
+  ;
+
+full_type_declaration
+  : TYPE IDENTIFIER IS type_definition SEMICOLON
+  ;
+
+function_specification
+  : FUNCTION name parameter_and_result_profile
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 2);)%
+  ;
+
+generic_instantiation
+  : PACKAGE name IS NEW name SEMICOLON
+  | PROCEDURE name IS NEW name SEMICOLON
+  ;
+
+handled_sequence_of_statements
+  : sequence_of_statements EXCEPTION exception_handler_list_opt
+  | sequence_of_statements
+  ;
+
+identifier_opt
+  : IDENTIFIER
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  | ;; empty
+  ;
+
+if_statement
+  : IF expression_opt THEN sequence_of_statements elsif_statement_list ELSE sequence_of_statements END IF SEMICOLON
+  | IF expression_opt THEN sequence_of_statements ELSE sequence_of_statements END IF SEMICOLON
+  | IF expression_opt THEN sequence_of_statements elsif_statement_list END IF SEMICOLON
+  | IF expression_opt THEN sequence_of_statements END IF SEMICOLON
+  ;
+
+index_constraint
+  : LEFT_PAREN discrete_subtype_definition RIGHT_PAREN
+  ;
+
+iteration_scheme
+  : FOR IDENTIFIER IN discrete_subtype_definition
+  ;
+
+loop_statement
+  : iteration_scheme LOOP sequence_of_statements END LOOP identifier_opt SEMICOLON
+  | LOOP sequence_of_statements END LOOP identifier_opt SEMICOLON
+  ;
+
+multiplying_operator : STAR | SLASH ;
+
+name
+  : name LEFT_PAREN range_list RIGHT_PAREN ;; slice or constraint
+  | name actual_parameter_part ;; function_call, procedure call.
+  | IDENTIFIER
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  | selected_component
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  ;
+
+name_opt
+  : name
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  | ;; empty
+  ;
+
+object_declaration
+  : IDENTIFIER COLON subtype_indication COLON_EQUAL expression_opt SEMICOLON
+  | IDENTIFIER COLON subtype_indication SEMICOLON
+  ;
+
+package_body
+  : PACKAGE BODY name aspect_specification_opt IS declarative_part BEGIN handled_sequence_of_statements END name_opt SEMICOLON
+    %()%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 3, 10, End_Name_Optional);)%
+  | PACKAGE BODY name aspect_specification_opt IS declarative_part END name_opt SEMICOLON
+    %()%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 3, 8, End_Name_Optional);)%
+  ;
+
+package_specification
+  : PACKAGE name aspect_specification_opt IS declarative_part END name_opt SEMICOLON
+    %()%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 2, 7, End_Name_Optional);)%
+  ;
+
+parameter_and_result_profile
+  : formal_part RETURN IDENTIFIER
+  | RETURN IDENTIFIER
+  ;
+
+parameter_profile_opt
+  : formal_part
+  | ;; empty
+  ;
+
+parameter_specification
+  : IDENTIFIER COLON IDENTIFIER COLON_EQUAL expression_opt
+  | IDENTIFIER COLON IDENTIFIER
+  | ;; empty
+  ;
+
+parameter_specification_list
+  : parameter_specification_list SEMICOLON parameter_specification
+  | parameter_specification
+  ;
+
+paren_expression
+  : LEFT_PAREN expression_opt RIGHT_PAREN
+  ;
+
+primary
+  : NUMERIC_LITERAL
+  | STRING_LITERAL
+  | name
+  | paren_expression
+  ;
+
+procedure_call_statement
+  : name SEMICOLON
+  ;
+
+procedure_specification
+  : PROCEDURE name parameter_profile_opt
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 2);)%
+  ;
+
+proper_body
+  : package_body
+  | subprogram_body
+  ;
+
+range_g
+  : simple_expression DOT_DOT simple_expression
+  ;
+
+range_list
+  : range_list COMMA range_g
+  | range_g
+  ;
+
+relation_and_list
+  : relation_and_list AND relation
+  | relation AND relation
+  ;
+
+relation_or_list
+  : relation_or_list OR relation
+  | relation OR relation
+  ;
+
+relation_xor_list
+  : relation_xor_list XOR relation
+  | relation XOR relation
+  ;
+
+relation
+  : simple_expression relational_operator simple_expression
+  | simple_expression
+  ;
+
+relational_operator
+  : EQUAL | SLASH_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL
+  ;;  =   | /=          | <    |  <=        | >       | >=
+  ;
+
+selected_component
+  : name DOT IDENTIFIER
+    %()%
+    %(return Merge_Names (Nonterm, Tokens, 1, 3);)%
+  ;
+
+sequence_of_statements_list
+  : sequence_of_statements_list statement
+  | statement
+  ;
+
+sequence_of_statements
+  : sequence_of_statements_list
+  | ;; empty
+  ;
+
+simple_expression
+  : unary_adding_operator term_list
+  | term_list
+  ;
+
+simple_return_statement
+  : RETURN expression_opt SEMICOLON
+  ;
+
+simple_statement
+  : assignment_statement
+    %(Action_Count (+simple_statement_ID) := Action_Count (+simple_statement_ID) + 1;)%
+  | exit_statement
+    %(Action_Count (+simple_statement_ID) := Action_Count (+simple_statement_ID) + 1;)%
+  | procedure_call_statement
+    %(Action_Count (+simple_statement_ID) := Action_Count (+simple_statement_ID) + 1;)%
+  | simple_return_statement
+    %(Action_Count (+simple_statement_ID) := Action_Count (+simple_statement_ID) + 1;)%
+  ;
+
+statement
+  : simple_statement
+    %(Action_Count (+statement_ID) := Action_Count (+statement_ID) + 1;)%
+  | compound_statement
+    %(Action_Count (+statement_ID) := Action_Count (+statement_ID) + 1;)%
+  ;
+
+subprogram_body
+  : subprogram_specification aspect_specification_opt IS declarative_part BEGIN
+    handled_sequence_of_statements END name_opt SEMICOLON
+    %(Action_Count (+subprogram_body_ID) := Action_Count (+subprogram_body_ID) + 1;)%
+    %(return Match_Names (Lexer, Descriptor, Tokens, 1, 8, End_Name_Optional);)%
+  ;
+
+subprogram_body_stub
+  : subprogram_specification IS SEPARATE SEMICOLON
+  ;
+
+subprogram_declaration
+  : subprogram_specification SEMICOLON
+    %(Action_Count (+subprogram_declaration_ID) := Action_Count (+subprogram_declaration_ID) + 1;)%
+  ;
+
+subprogram_specification
+  : procedure_specification
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  | function_specification
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  ;
+
+subtype_indication
+  : name constraint
+  | name
+  ;
+
+term
+  : term multiplying_operator factor
+  | factor
+  ;
+
+term_list
+  : term_list binary_adding_operator term
+  | term
+  ;
+
+type_declaration
+  : full_type_declaration
+  ;
+
+type_definition
+  : enumeration_type_definition
+  ;
+
+unary_adding_operator : PLUS | MINUS ; ;; + | -
+
+;;; end of file

@@ -1,0 +1,166 @@
+
+OK test_generate_errors.adb ../Test/bnf/unused_tokens : Run_Test
+OK bnf_wy_test.adb ada_lite_ebnf ada_lite : Run_Test
+OK bnf_wy_test.adb body_instantiation_conflict : Run_Test
+OK bnf_wy_test.adb case_expression : Run_Test
+OK bnf_wy_test.adb character_literal : Run_Test
+OK bnf_wy_test.adb conflict_name : Run_Test
+OK bnf_wy_test.adb dragon_4_43 : Run_Test
+OK bnf_wy_test.adb empty_production_1 : Run_Test
+OK bnf_wy_test.adb empty_production_2 : Run_Test
+OK bnf_wy_test.adb empty_production_3 : Run_Test
+OK bnf_wy_test.adb empty_production_4 : Run_Test
+OK bnf_wy_test.adb empty_production_5 : Run_Test
+OK bnf_wy_test.adb empty_production_6 : Run_Test
+OK bnf_wy_test.adb empty_production_7 : Run_Test
+OK bnf_wy_test.adb empty_production_8 : Run_Test
+OK bnf_wy_test.adb identifier_list_name_conflict : Run_Test
+OK bnf_wy_test.adb java_ebnf : Run_Test
+OK bnf_wy_test.adb java_enum_ch19 : Run_Test
+OK bnf_wy_test.adb java_expressions_antlr : Run_Test
+OK bnf_wy_test.adb java_expressions_ch19 : Run_Test
+OK bnf_wy_test.adb java_types_ch19 : Run_Test
+OK bnf_wy_test.adb lalr_generator_bug_01 : Run_Test
+OK bnf_wy_test.adb nested_ebnf_optional : Run_Test
+OK bnf_wy_test.adb python_ebnf : Run_Test
+OK bnf_wy_test.adb range_conflict : Run_Test
+OK bnf_wy_test.adb skip_to_grammar : Run_Test
+OK bnf_wy_test.adb subprograms : Run_Test
+OK bnf_wy_test.adb three_action_conflict : Run_Test
+OK bnf_wy_test.adb warth_left_recurse_expr_1 : Run_Test
+OK association_grammar_test.adb : Nominal
+OK dragon_4_43_lr1_test.adb : Test_First_Follow
+OK dragon_4_43_lr1_test.adb : Test_LR1_Items
+OK dragon_4_43_lr1_test.adb : Parser_Table
+OK dragon_4_43_lr1_test.adb : Test_Parse
+OK dragon_4_45_lalr_test.adb : Test_First
+OK dragon_4_45_lalr_test.adb : Test_LALR_Kernels
+OK dragon_4_45_lalr_test.adb : Parser_Table
+OK dragon_4_45_lalr_test.adb : Test_Parse
+OK dragon_4_43_packrat_gen.adb : Test_Parse
+OK grune_9_30.adb : Test_Item_Sets
+OK grune_9_30.adb : Test_Parse
+OK name_grammar_test.adb : Nominal
+OK test_accept_state.adb : Nominal
+OK test_follow.adb : Subprograms.One
+OK test_lr_expecting_terminal_sequence.adb : Test_Expecting
+OK test_mckenzie_recover.adb LALR : No_Error
+OK test_mckenzie_recover.adb LALR : Empty_Comments
+OK test_mckenzie_recover.adb LALR : Error_1
+OK test_mckenzie_recover.adb LALR : Error_2
+OK test_mckenzie_recover.adb LALR : Error_3
+OK test_mckenzie_recover.adb LALR : Error_4
+OK test_mckenzie_recover.adb LALR : Check_Accept
+OK test_mckenzie_recover.adb LALR : Extra_Begin
+OK test_mckenzie_recover.adb LALR : Conflict_1
+OK test_mckenzie_recover.adb LALR : Conflict_2
+OK test_mckenzie_recover.adb LALR : Missing_Return
+OK test_mckenzie_recover.adb LALR : Loop_Bounds
+OK test_mckenzie_recover.adb LALR : Pattern_1
+OK test_mckenzie_recover.adb LALR : Revive_Zombie_Parser
+OK test_mckenzie_recover.adb LALR : Error_Token_When_Parallel
+OK test_mckenzie_recover.adb LALR : If_In_Handler
+OK test_mckenzie_recover.adb LALR : Zombie_In_Resume
+OK test_mckenzie_recover.adb LALR : Push_Back_1
+OK test_mckenzie_recover.adb LALR : String_Quote_0
+OK test_mckenzie_recover.adb LALR : Missing_Name_0
+OK test_mckenzie_recover.adb LALR : Missing_Name_1
+OK test_mckenzie_recover.adb LALR : Missing_Name_2
+OK test_mckenzie_recover.adb LALR : Missing_Name_3
+OK test_mckenzie_recover.adb LALR : Missing_Name_4
+OK test_mckenzie_recover.adb LALR : Missing_Name_5
+OK test_mckenzie_recover.adb LALR : Block_Match_Names_1
+OK test_mckenzie_recover.adb LALR : Two_Parsers_1
+OK test_mckenzie_recover.adb LALR : Extra_Name_1
+OK test_mckenzie_recover.adb LALR : Extra_Name_2
+OK test_mckenzie_recover.adb LALR : Extra_Name_3
+OK test_mckenzie_recover.adb LALR : Two_Missing_Ends
+OK test_mckenzie_recover.adb LALR : Match_Selected_Component_1
+OK test_mckenzie_recover.adb LALR : Match_Selected_Component_2
+OK test_mckenzie_recover.adb LALR : Actual_Parameter_Part_1
+OK test_mckenzie_recover.adb LALR : Unfinished_Subprogram_Type_1
+OK test_mckenzie_recover.adb LALR : String_Quote_1
+OK test_mckenzie_recover.adb LALR : String_Quote_2
+OK test_mckenzie_recover.adb LALR : String_Quote_3
+OK test_mckenzie_recover.adb LALR : String_Quote_4
+OK test_mckenzie_recover.adb LALR : String_Quote_5
+OK test_mckenzie_recover.adb LALR : Enqueue_Limit
+OK test_mckenzie_recover.adb LALR : Minimal_Complete_Full_Reduce_1
+OK test_mckenzie_recover.adb LALR : Minimal_Complete_Full_Reduce_2
+OK test_mckenzie_recover.adb LALR : Minimal_Complete_Full_Reduce_3
+OK test_mckenzie_recover.adb LALR : Out_Of_Order_Ops
+OK test_mckenzie_recover.adb LALR : Error_During_Resume_1
+OK test_mckenzie_recover.adb LALR : Error_During_Resume_2
+OK test_mckenzie_recover.adb LALR : Minimal_Complete_Finish_1
+OK test_mckenzie_recover.adb LALR : Always_Minimal_Complete
+OK test_mckenzie_recover.adb LALR : Always_Matching_Begin
+OK test_mckenzie_recover.adb LALR : Do_Delete_First
+OK test_mckenzie_recover.adb LALR : Forbid_Minimal_Complete
+OK test_mckenzie_recover.adb LALR : Matching_Begin_Parse_All_Conflicts
+OK test_mckenzie_recover.adb LR1 : No_Error
+OK test_mckenzie_recover.adb LR1 : Empty_Comments
+OK test_mckenzie_recover.adb LR1 : Error_1
+OK test_mckenzie_recover.adb LR1 : Error_2
+OK test_mckenzie_recover.adb LR1 : Error_3
+OK test_mckenzie_recover.adb LR1 : Error_4
+OK test_mckenzie_recover.adb LR1 : Check_Accept
+OK test_mckenzie_recover.adb LR1 : Extra_Begin
+OK test_mckenzie_recover.adb LR1 : Conflict_1
+OK test_mckenzie_recover.adb LR1 : Conflict_2
+OK test_mckenzie_recover.adb LR1 : Missing_Return
+OK test_mckenzie_recover.adb LR1 : Loop_Bounds
+OK test_mckenzie_recover.adb LR1 : Pattern_1
+OK test_mckenzie_recover.adb LR1 : Revive_Zombie_Parser
+OK test_mckenzie_recover.adb LR1 : Error_Token_When_Parallel
+OK test_mckenzie_recover.adb LR1 : If_In_Handler
+OK test_mckenzie_recover.adb LR1 : Zombie_In_Resume
+OK test_mckenzie_recover.adb LR1 : Push_Back_1
+OK test_mckenzie_recover.adb LR1 : String_Quote_0
+OK test_mckenzie_recover.adb LR1 : Missing_Name_0
+OK test_mckenzie_recover.adb LR1 : Missing_Name_1
+OK test_mckenzie_recover.adb LR1 : Missing_Name_2
+OK test_mckenzie_recover.adb LR1 : Missing_Name_3
+OK test_mckenzie_recover.adb LR1 : Missing_Name_4
+OK test_mckenzie_recover.adb LR1 : Missing_Name_5
+OK test_mckenzie_recover.adb LR1 : Block_Match_Names_1
+OK test_mckenzie_recover.adb LR1 : Two_Parsers_1
+OK test_mckenzie_recover.adb LR1 : Extra_Name_1
+OK test_mckenzie_recover.adb LR1 : Extra_Name_2
+OK test_mckenzie_recover.adb LR1 : Extra_Name_3
+OK test_mckenzie_recover.adb LR1 : Two_Missing_Ends
+OK test_mckenzie_recover.adb LR1 : Match_Selected_Component_1
+OK test_mckenzie_recover.adb LR1 : Match_Selected_Component_2
+OK test_mckenzie_recover.adb LR1 : Actual_Parameter_Part_1
+OK test_mckenzie_recover.adb LR1 : Unfinished_Subprogram_Type_1
+OK test_mckenzie_recover.adb LR1 : String_Quote_1
+OK test_mckenzie_recover.adb LR1 : String_Quote_2
+OK test_mckenzie_recover.adb LR1 : String_Quote_3
+OK test_mckenzie_recover.adb LR1 : String_Quote_4
+OK test_mckenzie_recover.adb LR1 : String_Quote_5
+OK test_mckenzie_recover.adb LR1 : Enqueue_Limit
+OK test_mckenzie_recover.adb LR1 : Minimal_Complete_Full_Reduce_1
+OK test_mckenzie_recover.adb LR1 : Minimal_Complete_Full_Reduce_2
+OK test_mckenzie_recover.adb LR1 : Minimal_Complete_Full_Reduce_3
+OK test_mckenzie_recover.adb LR1 : Out_Of_Order_Ops
+OK test_mckenzie_recover.adb LR1 : Error_During_Resume_1
+OK test_mckenzie_recover.adb LR1 : Error_During_Resume_2
+OK test_mckenzie_recover.adb LR1 : Minimal_Complete_Finish_1
+OK test_mckenzie_recover.adb LR1 : Always_Minimal_Complete
+OK test_mckenzie_recover.adb LR1 : Always_Matching_Begin
+OK test_mckenzie_recover.adb LR1 : Do_Delete_First
+OK test_mckenzie_recover.adb LR1 : Forbid_Minimal_Complete
+OK test_mckenzie_recover.adb LR1 : Matching_Begin_Parse_All_Conflicts
+OK test_partial_parse.adb : Plain_String
+OK test_partial_parse.adb : File_String_Access
+OK test_skip_to.adb : Nominal
+OK trivial_productions_test.adb : Expression
+OK trivial_productions_test.adb : Subprograms
+OK warth_left_recurse_expr_1.adb : Test_Parse_Gen
+OK warth_left_recurse_expr_1.adb : Test_Parse_Proc
+OK wisitoken-syntax_trees-test.adb : Test_Move_Branch_Point
+OK wisitoken-generate-packrat-test.adb : Ada_Lite_Involved
+
+Total Tests Run:   160
+Successful Tests:  160
+Failed Assertions: 0
+Unexpected Errors: 0

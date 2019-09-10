@@ -1,0 +1,7 @@
+-- a simple body, with empty declarations
+is begin;
+
+-- one declaration; a body with empty declarations
+is
+    is begin;
+begin;

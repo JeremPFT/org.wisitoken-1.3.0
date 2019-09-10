@@ -1,0 +1,44 @@
+;; Small grammar for testing lexer 'skip_to' function, and two comment tokens.
+;;
+;; Tests run by test_skip_to.ads
+
+%code actions body context %{with Test_Skip_To_Aux; use Test_Skip_To_Aux;}%
+
+%keyword PERCENT "%"
+%token <delimited-text> PREAMBLE "%{" "%}"
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_-]* ]%
+%non_grammar <non-reporting> WHITESPACE %[ [ \t] ]%
+%non_grammar <new-line> NEW_LINE %[ [\x0a]|[\x0d][\x0a] ]%
+%non_grammar <comment> COMMENT_1 %[ ";;"[^\x0a\x04]* ]%
+%non_grammar <comment> COMMENT_2 %[ "--"[^\x0a\x04]* ]%
+
+%start compilation_unit_list
+
+;; testing text_rep parse table
+%generate LALR Ada re2c text_rep
+%generate LR1 Ada re2c text_rep
+
+declaration
+  : PERCENT IDENTIFIER declaration_item_list
+  %(Test_Declaration_0 ((Tree.ID (Nonterm), Tree.Byte_Region (Nonterm), others => <>));)%
+  ;
+
+declaration_item_list
+  : declaration_item_list declaration_item
+  | declaration_item
+  ;
+
+declaration_item
+  : IDENTIFIER
+  ;
+
+compilation_unit
+  : PREAMBLE
+  | declaration
+;
+
+compilation_unit_list
+  : compilation_unit_list compilation_unit
+  | compilation_unit
+;
+;; end of file

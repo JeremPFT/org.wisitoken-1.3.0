@@ -1,0 +1,36 @@
+;;; finding bug in parse table generator; two nonterms at end of
+;;; production, where first can be empty, were handled wrong.
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%keyword IN "in"
+
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]+ ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+
+%start compilation_unit
+
+compilation_unit
+  : parameter_specification parameter_specification
+    %(null; -- setq wisi-test-success t)%
+  ;
+
+mode
+  : IN
+  | ;; empty
+  ;
+
+name
+  : IDENTIFIER
+    %()%
+    %(return Propagate_Name (Nonterm, Tokens, 1);)%
+  ;
+
+parameter_specification
+  : IDENTIFIER mode name
+  ;
+
+;;; end of file

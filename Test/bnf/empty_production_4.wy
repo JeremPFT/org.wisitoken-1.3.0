@@ -1,0 +1,37 @@
+;;; finding bug in parse table generator; 2 nonterms at start of production can be empty
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%token <punctuation> SEMICOLON ";"
+
+%keyword OVERRIDING "overriding"
+%keyword OTHER "other"
+%keyword PROCEDURE "procedure"
+
+%token <symbol> IDENTIFIER %[ [a-zA-Z][0-9a-zA-Z_]* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+
+%start compilation_unit
+
+compilation_unit
+  : subprogram_declaration subprogram_declaration subprogram_declaration
+  ;
+
+subprogram_declaration
+  : overriding_indicator other_indicator PROCEDURE IDENTIFIER SEMICOLON
+  ;
+
+overriding_indicator
+  : OVERRIDING
+  | ;; empty
+  ;
+
+other_indicator
+  : OTHER
+  | ;; empty
+  ;
+
+;;; end of file

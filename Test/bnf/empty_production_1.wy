@@ -1,0 +1,51 @@
+;;; Demonstrate a correct way to allow an empty production where a list
+;;  is allowed, for both lr and packrat parsers.
+
+;; Consider the following statements:
+;;
+;; 1) is <empty> begin ;
+;; 2) is is <empty> begin ; begin ;
+;; 3) is <empty> is <empty> begin ; begin ;
+;;
+;;; see empty_production_2.wy for an incorrect attempt to represent
+;;; this grammar
+;;
+;; other similar tests:
+;;  1 - empty production in a list
+;;  2 - empty production in a list causes ambiguity in lalr, packrat parses successfully
+;;  3 - production ends in empty nonterm, non-empty nonterm
+;;  4 - production starts with two empty nonterms
+;;  5 - empty production following a nonterm
+;;  6 - empty production in a list; same conflict in two states
+;;  7 - two consecutive empty productions not first
+;;  8 - two consecutive empty productions, confused with a similar production
+
+%generate LALR Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+%keyword BEGIN "begin"
+%keyword IS "is"
+
+%token <punctuation> SEMICOLON ";"
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t\n] ]%
+%non_grammar <non-reporting> COMMENT %[ "--"[^\n]*[\n] ]%
+
+%start declarative_part
+
+declarations
+  : declarations body
+  | body
+  ;
+
+declarative_part
+  : declarations
+  | ;; empty
+  ;
+
+body
+  : IS declarative_part BEGIN SEMICOLON
+    %(null; -- wisi-statement-action [1 block-middle 3 block-middle 4 statement-end])%
+  ;
+;;; end of file

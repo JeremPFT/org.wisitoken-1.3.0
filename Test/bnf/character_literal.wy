@@ -1,0 +1,106 @@
+;; Test regular expressions vs Ada tick, character literal, string,
+;; demonstrating a problem with regular expression lexers, fixed by
+;; re2c lookahead.
+
+%code copyright_license %{
+--  Copyright (C) 2013, 2015, 2017 - 2019 Stephen Leake.  All Rights Reserved.
+--
+--  This program is free software; you can redistribute it and/or
+--  modify it under the terms of the GNU General Public License as
+--  published by the Free Software Foundation; either version 3, or (at
+--  your option) any later version.
+--
+--  This software is distributed in the hope that it will be useful,
+--  but WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+--  General Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License
+--  along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+}%
+
+%code actions spec context %{with WisiToken.Syntax_Trees;}%
+
+;; Declare all variants tested by wisi_wy_test.adb
+%generate LR1 Ada re2c
+%generate Packrat_Gen Ada re2c
+%generate Packrat_Proc Ada re2c
+
+;; wisi-generate requires some keywords; test case insensitive
+%case_insensitive
+%keyword FOO "foo"
+
+%token <punctuation> COMMA ","
+%token <punctuation> SEMICOLON ";"
+
+;; GNAT-specific syntax for non-ASCII characters
+%re2c_regexp GNAT_Char_Coding %[("[\""[0-9A-Fa-f]+"\"]")]%
+
+;; re2c lookahead regular expression; this is not a character literal.
+;; re2c does not allow combining | with /, so we need three tokens for
+;; this (sigh).
+;;
+;; In this simple grammar, we could take advantage of the fact that
+;; TICK is always followed by LEFT_PAREN, but we want to find a
+;; solution that works for full Ada, where that is not true. All of
+;; the ambiguous cases for full Ada are given in
+;; character_literal.input; this set of regexps sorts them out.
+;;
+;; TICK_2 is not needed by elisp, and is not valid a elisp
+;; regular expression. So we exclude it when lexer is elisp.
+%token <punctuation> TICK_1 "'"
+
+%if lexer = re2c
+%token <punctuation> TICK_2 %[ "'" / "('"([\x20-\U0010FFFF]|GNAT_Char_Coding)"'" ]%
+%end if
+
+%token <punctuation> LEFT_PAREN "("
+%token <punctuation> RIGHT_PAREN ")"
+
+%token <string-single> CHARACTER_LITERAL %[ "'"([\x20-\U0010FFFF]|GNAT_Char_Coding)"'" ]%
+
+;; full Unicode range, starting with non-control, non-digit; also GNAT char coding syntax
+%token <symbol> IDENTIFIER
+   %[ ([a-zA-Z\x80-\U0010FFFF]|GNAT_Char_Coding)([0-9a-zA-Z_\x80-\U0010FFFF]|GNAT_Char_Coding)* ]%
+
+%non_grammar <non-reporting> WHITESPACE %[ [ \t] ]%
+%non_grammar <new-line> NEW_LINE %[ [\n] ]%
+%non_grammar <comment> COMMENT %[ "--"[^\n]* ]%
+
+%token <string-double> STRING_LITERAL %[ (["][\x20-\x21\x23-\U0010FFFF]*["])+ ]%
+
+%start compilation_unit
+
+compilation_unit
+  : statement_list
+  ;
+
+statement_list
+  : statement_list statement
+  | statement
+  ;
+
+statement
+  ;; Aggregate for Character array
+  : IDENTIFIER tick LEFT_PAREN CHARACTER_LITERAL COMMA CHARACTER_LITERAL RIGHT_PAREN SEMICOLON
+
+  ;; Qualified Character literal
+  | IDENTIFIER tick LEFT_PAREN CHARACTER_LITERAL RIGHT_PAREN SEMICOLON
+
+ ;; Ada attribute reference.
+  | IDENTIFIER tick IDENTIFIER SEMICOLON
+
+ ;; An Ada string, with and without embedded quotes.
+  | STRING_LITERAL SEMICOLON
+
+ ;; a use of FOO
+  | FOO SEMICOLON
+  ;
+
+tick
+  : TICK_1
+%if lexer = re2c
+  | TICK_2
+%end if
+  ;
+;;; end of file
