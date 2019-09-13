@@ -1,0 +1,29 @@
+with "gnatcoll";
+
+with "../common/shared.gpr";
+
+project Wisitoken_Bnf_Generate is
+
+  for Languages use ("Ada", "C");
+
+  for Create_Missing_Dirs use "True";
+
+  Src_Dirs := ();
+  Src_Dirs := Src_Dirs & ".";
+  Src_Dirs := Src_Dirs & "../org.stephe_leake.sal-3.3/source";
+
+  for Source_Dirs use Src_Dirs;
+
+  Excl_Src_Lst := ();
+  for Excluded_Source_Files use Excl_Src_Lst;
+
+  for Object_Dir use Shared.Object_Dir;
+  for Exec_Dir use Shared.Exec_Dir;
+
+  for Main use ("wisitoken-bnf-generate.adb");
+
+  package Compiler renames Shared.Compiler;
+
+  package Builder renames Shared.Builder;
+
+end Wisitoken_Bnf_Generate;
